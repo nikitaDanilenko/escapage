@@ -1,4 +1,4 @@
-module Start exposing (..)
+module Hub exposing (..)
 
 import Browser exposing (UrlRequest)
 import Browser.Navigation as Nav
