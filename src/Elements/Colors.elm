@@ -15,3 +15,10 @@ type alias Navigation =
     }
 
 
+darkGray : RGBA
+darkGray =
+    { red = 0.1
+    , green = 0.1
+    , blue = 0.1
+    , alpha = 0.1
+    }
