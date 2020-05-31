@@ -4,6 +4,7 @@ import Browser exposing (UrlRequest)
 import Browser.Navigation as Nav
 import Html exposing (Html, div)
 import Pages.Entry as Entry
+import Pages.Shadows as Shadows
 import Url exposing (Protocol(..), Url)
 
 
@@ -28,12 +29,14 @@ type alias Model =
 type Page
     = Void
     | Entry Entry.Model
+    | Shadows Shadows.Model
 
 
 type Msg
     = ClickedLink UrlRequest
     | ChangedUrl Url
     | EntryMsg Entry.Msg
+    | ShadowsMsg Shadows.Msg
 
 
 init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -51,15 +54,19 @@ view model =
         Entry entry ->
             Html.map EntryMsg (Entry.view entry)
 
+        Shadows shadows ->
+            Html.map ShadowsMsg (Shadows.view shadows)
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    let nothing = (model, Cmd.none)
+    in case msg of
         ClickedLink unknown ->
-            ( model, Cmd.none )
+            nothing
 
         ChangedUrl unknown ->
-            ( model, Cmd.none )
+            nothing
 
         EntryMsg entryMsg ->
             case model.page of
@@ -67,13 +74,26 @@ update msg model =
                     stepEntry model (Entry.update entryMsg entry)
 
                 _ ->
-                    ( model, Cmd.none )
+                    nothing
+
+        ShadowsMsg shadowsMsg ->
+            case model.page of
+                Shadows shadows ->
+                    stepShadows model (Shadows.update shadowsMsg shadows)
+
+                _ -> nothing
+
 
 
 stepEntry : Model -> ( Entry.Model, Cmd Entry.Msg ) -> ( Model, Cmd Msg )
-stepEntry model ( entry, cmd ) =
-    ( { model | page = Entry entry }, Cmd.map EntryMsg cmd )
+stepEntry = stepWith Entry EntryMsg
 
+stepShadows : Model -> (Shadows.Model, Cmd Shadows.Msg) -> (Model, Cmd Msg)
+stepShadows = stepWith Shadows ShadowsMsg
+
+stepWith :  (page -> Page) -> (msg -> Msg) -> Model -> (page, Cmd msg) -> (Model, Cmd Msg)
+stepWith mkPage mkMsg model (page, pageMsg) =
+    ( { model | page = mkPage page}, Cmd.map mkMsg pageMsg)
 
 titleFor : Model -> String
 titleFor model =
@@ -83,6 +103,10 @@ titleFor model =
 
         Entry entry ->
             "Entry"
+
+        Shadows shadows ->
+            "Shadows"
+
 
 
 stepTo : Url -> Model -> ( Model, Cmd Msg )
