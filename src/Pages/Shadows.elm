@@ -95,8 +95,8 @@ view model =
                 , Inventory.view model.inventory
                 , div [ id "shadowPuzzle" ]
                     [ div [ id "shadowHint" ]
-                        ([ label [] [ text "64222" ]
-                         , div [ id "shadowButtons " ]
+                        (computedInput solutionSequence ++
+                         [ div [ id "shadowButtons " ]
                             [ div [ id "shadowButtonsRow1" ]
                                 ([ A, B, C ]
                                     |> List.map mkButton
