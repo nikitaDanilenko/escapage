@@ -1,13 +1,15 @@
 module Pages.Shadows exposing (..)
 
 import Elements.Colors as Colors
+import Elements.DarkMode as DarkMode
 import Elements.Inventory as Inventory exposing (Inventory)
 import Elements.Navigation as Navigation
-import Extras.Maybe
+import Extras.Result
+import Hex
 import Html exposing (Html, button, div, label, text)
-import Html.Attributes exposing (disabled, id)
+import Html.Attributes exposing (id)
 import Html.Events exposing (onClick)
-import List.Extra
+import Ionicon
 
 
 type alias Model =
@@ -16,9 +18,14 @@ type alias Model =
     }
 
 
-solutionSequence : List Button
-solutionSequence =
-    List.reverse [ F, A, D, E ]
+updatePressedSequence : Model -> List Button -> Model
+updatePressedSequence model pressedSequence =
+    { model | pressedSequence = pressedSequence }
+
+
+updateInventory : Model -> Inventory -> Model
+updateInventory model inventory =
+    { model | inventory = inventory }
 
 
 type Button
@@ -82,38 +89,83 @@ navigationColors =
 view : Model -> Html Msg
 view model =
     let
-        createButton =
-            mkButton model.pressedSequence
-    in
-    div []
-        [ Navigation.navigation navigationWiring
-        , Inventory.view model.inventory
-        , div [ id "shadowPuzzle" ]
-            [ div [ id "shadowHint" ]
-                [ label [] [ text "64222" ]
-                , div [ id "shadowButtons " ]
-                    [ div [ id "shadowButtonsRow1" ]
-                        [ A, B, C ]
-                        |> List.map createButton
+        unsolved =
+            div []
+                [ Navigation.navigation navigationWiring navigationColors 80
+                , Inventory.view model.inventory
+                , div [ id "shadowPuzzle" ]
+                    [ div [ id "shadowHint" ]
+                        ([ label [] [ text "64222" ]
+                         , div [ id "shadowButtons " ]
+                            [ div [ id "shadowButtonsRow1" ]
+                                ([ A, B, C ]
+                                    |> List.map mkButton
+                                )
+                            , div [ id "shadowButtonsRow2" ]
+                                ([ D, E, F ]
+                                    |> List.map mkButton
+                                )
+                            ]
+                         ]
+                            ++ computedInput model.pressedSequence
+                        )
                     ]
-                , [ div [ id "shadowButtonsRow2" ]
-                        [ D, E, F ]
-                        |> List.map createButton
-                  ]
                 ]
-            ]
-        ]
+
+        solved =
+            div [] [ label [] [ Ionicon.checkmarkCircled 500 Colors.darkGray ] ]
+    in
+    if DarkMode.isUnlocked model.inventory.darkMode then
+        solved
+
+    else
+        unsolved
 
 
-isLast : a -> List a -> Bool
-isLast x xs =
-    Extras.Maybe.fold False ((==) x) (List.Extra.last xs)
+computedInput : List Button -> List (Html Msg)
+computedInput bs =
+    let
+        output =
+            bs |> List.map showButton |> String.join "" |> String.toLower |> Hex.fromString |> Extras.Result.fold "" String.fromInt
+    in
+    if String.isEmpty output then
+        []
+
+    else
+        [ label [] [ text output ] ]
 
 
-mkButton : List Button -> Button -> Html Msg
-mkButton pressed b =
+solutionSequence : List Button
+solutionSequence =
+    [ F, A, D, E ]
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        ButtonPressed button ->
+            let
+                newSequence =
+                    model.pressedSequence |> (\xs -> xs ++ [ button ])
+
+                newModel =
+                    if newSequence == solutionSequence then
+                        DarkMode.unlock model.inventory.darkMode |> Inventory.updateDarkMode model.inventory |> updateInventory model
+
+                    else
+                        updatePressedSequence model newSequence
+            in
+            ( newModel, Cmd.none )
+
+        Reload ->
+            ( updatePressedSequence model [], Cmd.none )
+
+        Back ->
+            ( model, Cmd.none )
+
+
+mkButton : Button -> Html Msg
+mkButton b =
     button
-        [ onClick (ButtonPressed b)
-        , disabled (not (isLast b pressed))
-        ]
+        [ onClick (ButtonPressed b) ]
         [ label [] [ showButton b |> text ] ]
