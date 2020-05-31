@@ -8,8 +8,8 @@ import Ionicon
 
 
 type alias Wiring msg =
-    { reload : Cmd msg
-    , back : Cmd msg
+    { reload : msg
+    , back : msg
     }
 
 
