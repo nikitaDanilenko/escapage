@@ -1,6 +1,7 @@
 module Elements.Inventory exposing (..)
 
 import Elements.Colors exposing (RGBA)
+import Elements.DarkMode exposing (DarkMode(..))
 import Elements.Unlockable exposing (Unlockable, unlockable)
 import Html exposing (Html, button, div, label, text)
 import Html.Attributes exposing (id)
@@ -12,8 +13,9 @@ type alias Inventory =
     }
 
 
-type DarkMode
-    = DarkMode (Unlockable String)
+updateDarkMode : Inventory -> DarkMode -> Inventory
+updateDarkMode inventory darkMode =
+    { inventory | darkMode = darkMode }
 
 
 empty : Inventory
@@ -40,6 +42,5 @@ type alias Icon msg =
 view : Inventory -> Html msg
 view inventory =
     div [ id "inventory" ]
-        [ button [] [ text "click?" ]
-        , label [] [ Ionicon.alert 80 { red = 1, green = 0, blue = 1, alpha = 1 } ]
+        [ label [] [ Ionicon.alert 80 { red = 1, green = 0, blue = 1, alpha = 1 } ]
         ]
